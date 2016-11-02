@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'maven'
 
 group = 'net.minecraftforge'
-version = '2.6-SNAPSHOT'
+version = '2.6'
 
 description = "Stateless4J - a fluent statemachine based on Stateless"
 
