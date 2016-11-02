@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'maven'
 
 group = 'net.minecraftforge'
-version = '2.6'
+version = '2.7'
 
 description = "Stateless4J - a fluent statemachine based on Stateless"
 
@@ -19,7 +19,7 @@ repositories {
 }
 dependencies {
     compile group: 'org.slf4j', name: 'slf4j-api', version:'1.7.21'
-    runtime group: 'org.slf4j', name: 'slf4j-jdk14', version:'1.7.7'
+    testRuntime group: 'org.slf4j', name: 'slf4j-jdk14', version:'1.7.7'
     testCompile group: 'junit', name: 'junit', version:'4.11'
 }
 
