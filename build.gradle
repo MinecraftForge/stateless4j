@@ -1,0 +1,101 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'net.minecraftforge'
+version = '2.6-SNAPSHOT'
+
+description = "Stateless4J - a fluent statemachine based on Stateless"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+repositories {
+     maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+     maven { url "http://repo.maven.apache.org/maven2" }
+}
+dependencies {
+    compile group: 'org.slf4j', name: 'slf4j-api', version:'1.7.21'
+    runtime group: 'org.slf4j', name: 'slf4j-jdk14', version:'1.7.7'
+    testCompile group: 'junit', name: 'junit', version:'4.11'
+}
+
+task sourcesJar(type: Jar) {
+    //noinspection GroovyAssignabilityCheck
+    from sourceSets.main.allJava
+    from 'examples'
+    classifier = 'sources'
+}
+
+artifacts {
+    archives sourcesJar
+}
+
+uploadArchives {
+    repositories.mavenDeployer {
+
+        dependsOn 'build'
+
+        if (project.hasProperty('forgeMavenPass'))
+        {
+            repository(url: "http://files.minecraftforge.net/maven/manage/upload") {
+                authentication(userName: "forge", password: project.getProperty('forgeMavenPass')) // the elvis operator. look it up.
+            }
+        }
+        else
+        {
+            // local repo folder. Might wanna juset use  gradle install   if you wanans end it to maven-local
+            repository(url: 'file://localhost/' + project.file('repo').getAbsolutePath())
+        }
+
+        pom {
+            groupId = project.group
+            version = project.version
+            artifactId = project.archivesBaseName
+            //noinspection GroovyAssignabilityCheck
+            project {
+                //noinspection GroovyAssignabilityCheck
+                name project.archivesBaseName
+                packaging 'jar'
+                //noinspection GroovyAssignabilityCheck
+                description 'A fluent interface for state machines'
+                url 'https://github.com/MinecraftForge/stateless4j'
+
+                scm {
+                    url 'https://github.com/MinecraftForge/stateless4j'
+                    connection 'scm:git:https://github.com/MinecraftForge/stateless4j.git'
+                    developerConnection 'scm:git:https://github.com/MinecraftForge/stateless4j.git'
+                }
+
+                issueManagement {
+                    system 'github'
+                    url 'https://github.com/MinecraftForge/stateless4j/issues'
+                }
+
+                licenses {
+                    license {
+                        //noinspection GroovyAssignabilityCheck
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        distribution 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        //noinspection GroovyAssignabilityCheck
+                        name 'Arnaud SYLVESTRE'
+                        roles { role 'developer' }
+                    }
+                    developer {
+                        //noinspection GroovyAssignabilityCheck
+                        name 'John Oxley'
+                        roles { role 'developer' }
+                    }
+                }
+            }
+        }
+    }
+}

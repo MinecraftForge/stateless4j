@@ -5,7 +5,6 @@ import com.github.oxo42.stateless4j.delegates.Action2;
 import com.github.oxo42.stateless4j.delegates.Func;
 import com.github.oxo42.stateless4j.transitions.Transition;
 import com.github.oxo42.stateless4j.triggers.*;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
@@ -22,7 +21,7 @@ public class StateMachine<S, T> {
     protected final StateMachineConfig<S, T> config;
     protected final Func<S> stateAccessor;
     protected final Action1<S> stateMutator;
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final Action2<T, Object[]> logCallback;
     protected Action2<S, T> unhandledTriggerAction = new Action2<S, T>() {
 
         public void doIt(S state, T trigger) {
@@ -51,25 +50,19 @@ public class StateMachine<S, T> {
      * @param config       State machine configuration
      */
     public StateMachine(S initialState, StateMachineConfig<S, T> config) {
-        this.config = config;
-        final StateReference<S, T> reference = new StateReference<>();
-        reference.setState(initialState);
-        stateAccessor = new Func<S>() {
-            @Override
-            public S call() {
-                return reference.getState();
-            }
-        };
-        stateMutator = new Action1<S>() {
-            @Override
-            public void doIt(S s) {
-                reference.setState(s);
-            }
-        };
-        if (config.isEntryActionOfInitialStateEnabled()) {
-            Transition<S,T> initialTransition = new Transition(initialState, initialState, null);
-            getCurrentRepresentation().enter(initialTransition);
-        }
+        this(initialState, null, null, config);
+   }
+
+    /**
+     * Construct a state machine with internal storage and custom log callback
+     *
+     * @param initialState  The initial state
+     * @param config        State machine configuration
+     * @param logCallback   Logging callback
+     */
+    public StateMachine(S initialState, StateMachineConfig<S, T> config, Action2<T, Object[]> logCallback)
+    {
+        this(initialState, null, null, config, logCallback);
     }
 
     /**
@@ -78,18 +71,66 @@ public class StateMachine<S, T> {
      * @param initialState  The initial state
      * @param stateAccessor State accessor
      * @param stateMutator  State mutator
+     * @param config        State machine configuration
      */
     public StateMachine(S initialState, Func<S> stateAccessor, Action1<S> stateMutator, StateMachineConfig<S, T> config) {
+        this(initialState, stateAccessor, stateMutator, config, new Action2<T, Object[]>()
+        {
+            @Override
+            public void doIt(T trigger, Object[] args)
+            {
+                LoggerFactory.getLogger(StateMachine.class).debug("Firing {} with {}", trigger, args);
+            }
+        });
+    }
+
+    /**
+     * Construct a state machine with optional external storage and custom logging callback. If both stateAccessor and stateMutator are null
+     * a default internal state representation is generated.
+     *
+     * @param initialState  The initial state
+     * @param stateAccessor State accessor
+     * @param stateMutator  State mutator
+     * @param config        State machine configuration
+     * @param logCallback   Logging callback
+     */
+    public StateMachine(S initialState, Func<S> stateAccessor, Action1<S> stateMutator, StateMachineConfig<S, T> config, Action2<T, Object[]> logCallback)
+    {
         this.config = config;
-        this.stateAccessor = stateAccessor;
-        this.stateMutator = stateMutator;
-        stateMutator.doIt(initialState);
+        this.logCallback = logCallback;
+        if (stateAccessor == null && stateMutator == null)
+        {
+            final StateReference<S, T> reference = new StateReference<>();
+            reference.setState(initialState);
+            this.stateAccessor = new Func<S>() {
+                @Override
+                public S call() {
+                    return reference.getState();
+                }
+            };
+            this.stateMutator = new Action1<S>() {
+                @Override
+                public void doIt(S s) {
+                    reference.setState(s);
+                }
+            };
+        } else if (stateAccessor != null && stateMutator != null) {
+            this.stateAccessor = stateAccessor;
+            this.stateMutator = stateMutator;
+            stateMutator.doIt(initialState);
+        } else {
+            throw new NullPointerException("One of StateMutator and StateAccessor are null");
+        }
+        if (config.isEntryActionOfInitialStateEnabled()) {
+            Transition<S,T> initialTransition = new Transition<>(initialState, initialState, null);
+            getCurrentRepresentation().enter(initialTransition);
+        }
     }
 
     public StateConfiguration<S, T> configure(S state) {
         return config.configure(state);
     }
-    
+
     public StateMachineConfig<S, T> configuration() {
         return config;
     }
@@ -185,7 +226,7 @@ public class StateMachine<S, T> {
     }
 
     protected void publicFire(T trigger, Object... args) {
-        logger.info("Firing " + trigger);
+        logCallback.doIt(trigger, args);
         TriggerWithParameters<S, T> configuration = config.getTriggerConfiguration(trigger);
         if (configuration != null) {
             configuration.validateParameters(args);

@@ -1,14 +1,3 @@
-Maven
-=====
-```xml
-    <dependency>
-        <groupId>com.github.oxo42</groupId>
-        <artifactId>stateless4j</artifactId>
-        <version>2.5.0</version>
-    </dependency>
-```
-
-[![Build Status](https://travis-ci.org/oxo42/stateless4j.svg?branch=master)](https://travis-ci.org/oxo42/stateless4j)
 
 Introduction
 ============
@@ -25,7 +14,6 @@ phoneCallConfig.configure(State.Ringing)
         .permit(Trigger.CallConnected, State.Connected);
 
 // this example uses Java 8 method references
-// a Java 7 example is provided in /examples
 phoneCallConfig.configure(State.Connected)
         .onEntry(this::startCallTimer)
         .onExit(this::stopCallTimer)
@@ -44,6 +32,10 @@ assertEquals(State.Ringing, phoneCall.getState());
 
 stateless4j is a port of [stateless](https://github.com/nblumhardt/stateless) for java
 
+Fork
+====
+
+MinecraftForge Stateless4J is a fork of (https://github.com/oxo42/stateless4j) with many thanks! It can be downloaded from the MinecraftForge maven repository.
 
 Features
 ========
